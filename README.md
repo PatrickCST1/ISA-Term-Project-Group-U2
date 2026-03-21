@@ -1,20 +1,34 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Lumina API
 
-# Run and deploy your AI Studio app
+## Prerequisites
+- Docker Desktop
+- Node.js 20+
+- Git
 
-This contains everything you need to run your app locally.
+## Setup
 
-View your app in AI Studio: https://ai.studio/apps/317cb702-4ed8-4f6b-9774-73c968ed107a
+1. Clone the repo
+   git clone https://github.com/PatrickCST1/ISA-Term-Project-Group-U2
+   cd lumina-api
 
-## Run Locally
+2. Set up environment variables
+   cp server/.env.example server/.env
+   cp .env.example .env
+   cp client/.env.example client/.env
 
-**Prerequisites:**  Node.js
+3. Start everything
+   docker compose up --build
 
+## URLs
+- App: http://localhost:5173/IsaAsgn1/
+- API: http://localhost:3000
+- DB Viewer: http://localhost:8080
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Daily workflow
+- Start: docker compose up
+- Stop: docker compose down
+- After pulling new changes: docker compose up --build
+
+## Environment Variables
+Set up root .env, server/.env, and client/.env using the .env.example files.
+I shared the keys over discord but dm me if you need them.
