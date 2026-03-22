@@ -4,16 +4,16 @@ services:
     ports:
       - "5173:5173"
     depends_on:
-      - server
+      - core
     networks:
       - lumina-network
 
-  server:
-    build: ./server
+  core:
+    build: ./services/core
     ports:
       - "3000:3000"
     env_file:
-      - ./server/.env
+      - ./services/core/.env
     depends_on:
       - db
     networks:

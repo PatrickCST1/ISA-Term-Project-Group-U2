@@ -1,4 +1,4 @@
-// server/middleware/auth.js
+// services/middleware/auth.js
 const { query } = require("../db/db");
 
 module.exports = async function (req, res, next) {

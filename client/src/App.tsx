@@ -218,7 +218,7 @@ function LoginScreen({ onLogin, onSignUp }: { onLogin: (role: string) => void; o
         setError(data.error || 'Login failed');
       }
     } catch (err) {
-      setError('Could not reach server');
+      setError('Could not reach services');
     } finally {
       setLoading(false);
     }
@@ -346,7 +346,7 @@ function SignUpScreen({ onSignUp, onLogin }: { onSignUp: (role: string) => void;
         setError(data.error || 'Registration failed');
       }
     } catch (err) {
-      setError('Could not reach server');
+      setError('Could not reach services');
     } finally {
       setLoading(false);
     }
@@ -943,7 +943,7 @@ function UserEditScreen({ user, onCancel, onConfirm }: { user: { username: strin
         setError(data.error || 'Failed to update user');
       }
     } catch (err) {
-      setError('Could not reach server');
+      setError('Could not reach services');
     } finally {
       setLoading(false);
     }
@@ -1032,7 +1032,7 @@ function UserDeleteConfirmScreen({ user, onCancel, onConfirm }: { user: { userna
         setError(data.error || 'Failed to delete user');
       }
     } catch (err) {
-      setError('Could not reach server');
+      setError('Could not reach services');
     } finally {
       setLoading(false);
     }

@@ -23,8 +23,8 @@ export default defineConfig(({ mode }) => {
     server: {
       hmr: process.env.DISABLE_HMR !== 'true',
       proxy: {
-        '/IsaAsgn1/client': 'http://server:3000',
-        '/IsaAsgn1/api': 'http://server:3000'
+        '/IsaAsgn1/client': 'http://core:3000',
+        '/IsaAsgn1/api': 'http://core:3000'
       }
     },
   };
