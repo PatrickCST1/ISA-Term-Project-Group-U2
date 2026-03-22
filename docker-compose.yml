@@ -19,6 +19,11 @@ services:
     networks:
       - lumina-network
 
+  model:
+    build: ./services/model
+    networks:
+      - lumina-network
+
   db:
     image: mysql:8.0
     environment:

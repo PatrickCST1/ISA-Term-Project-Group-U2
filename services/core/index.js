@@ -17,6 +17,9 @@ const usersRouter = require("./routes/client/users");
 const updateUserRouter = require("./routes/client/updateUser");
 const deleteUserRouter = require("./routes/client/deleteUser");
 const logoutRouter = require("./routes/client/logout");
+
+const modelQueryRouter = require("./routes/api/query");
+
 const auth = require("./middleware/auth");
 
 app.use(cors({
@@ -37,7 +40,7 @@ app.use(`${BASE_PATH}/client/users`, auth, usersRouter);
 app.use(`${BASE_PATH}/client/updateUsers`, auth, updateUserRouter);
 app.use(`${BASE_PATH}/client/deleteUser`, auth, deleteUserRouter);
 
-
+app.use(`${BASE_PATH}/api/query`, modelQueryRouter);
 
 
 app.use(BASE_PATH, express.static(path.join(__dirname, '../dist')));
