@@ -27,15 +27,18 @@ services:
   db:
     image: mysql:8.0
     environment:
-      - MYSQL_ROOT_PASSWORD=${DB_PASS}
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASS}
       - MYSQL_DATABASE=${DB_NAME}
-      - MYSQL_USER=${DB_USER}
-      - MYSQL_PASSWORD=${DB_PASS}
+      - DB_ADMIN_USER=${DB_ADMIN_USER}
+      - DB_ADMIN_PASS=${DB_ADMIN_PASS}
+      - DB_RESTRICTED_USER=${DB_RESTRICTED_USER}
+      - DB_RESTRICTED_PASS=${DB_RESTRICTED_PASS}
     ports:
       - "3307:3306"
     volumes:
       - dbdata:/var/lib/mysql
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./db/init.sh:/docker-entrypoint-initdb.d/02-init.sh
     networks:
       - lumina-network
 

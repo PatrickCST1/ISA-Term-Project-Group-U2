@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const crypto = require("crypto");
-const { query } = require("../../db/db");
+const { restrictedQuery } = require("../../db/db");
 
 router.post("/", async (req, res) => {
     const { username, email, password, confirmPassword } = req.body;
@@ -15,7 +15,7 @@ router.post("/", async (req, res) => {
     }
 
     try {
-        const rows = await query(
+        const rows = await restrictedQuery(
             "users",
             "SELECT email FROM {{table}} WHERE email = ?",
             [email]
@@ -28,7 +28,7 @@ router.post("/", async (req, res) => {
         const salt = crypto.randomBytes(16).toString("hex");
         const hash = crypto.createHash("sha256").update(password + salt).digest("hex");
 
-        await query(
+        await restrictedQuery(
             "users",
             "INSERT INTO {{table}} (username, email, password, salt) VALUES (?, ?, ?, ?)",
             [username, email, hash, salt]

@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { query } = require('../../db/db');
+const { adminQuery } = require('../../db/db');
 
 router.patch('/', async (req, res) => {
     if (req.user.role !== "admin") {
         return res.status(401).json({error: "Not authorized"});
     }
 
-    const result = await query("users",
+    const result = await adminQuery("users",
         "UPDATE {{table}} SET role = ?, daily_token_limit = ? WHERE email = ?",
         [req.body.selectedUserRole, req.body.selectedUserDailyTokenLimit, req.body.selectedUserEmail]);
 

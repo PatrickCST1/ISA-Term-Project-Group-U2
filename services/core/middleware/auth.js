@@ -1,5 +1,5 @@
 // services/middleware/auth.js
-const { query } = require("../db/db");
+const { restrictedQuery } = require("../db/db");
 
 module.exports = async function (req, res, next) {
     const email = req.signedCookies.auth_email;
@@ -9,7 +9,7 @@ module.exports = async function (req, res, next) {
     }
 
     try {
-        const rows = await query(
+        const rows = await restrictedQuery(
             "users",
             "SELECT email, username, role, daily_token_limit, daily_tokens_consumed FROM {{table}} WHERE email = ?",
             [email]

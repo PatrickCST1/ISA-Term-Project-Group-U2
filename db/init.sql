@@ -39,7 +39,7 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`email`, `username`, `password`, `salt`, `role`, `daily_token_limit`, `daily_tokens_consumed`) VALUES
     ('patrickkennedy@lumina.ca', 'Patrick', '6a3dad49d7d8df84845f70ef4ca0def33b87c36a2e3289b678c49413475023a2', '91fac03a5531c9e2a5dbe3f08fcc3866', 'admin', 1000, 0),
-    ('patrickforschool17@gmail.com', 'Patrick', 'c4af3ba459e709e6d27e5121feb5a89be02d8c2d9f86937b903cc5350f17d516', 'd2be7feba843b757b534bd0e57539181', 'user', 20, 0);
+    ('patrickforschool17@gmail.com', 'Patrick', 'c4af3ba459e709e6d27e5121feb5a89be02d8c2d9f86937b903cc5350f17d516', 'd2be7feba843b757b534bd0e57539181', 'user', 20, 19);
 
 -- Dump completed on 2026-03-21 10:08:40
 /*!40101 SET character_set_client = @saved_cs_client */;

@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
-const { query } = require('../../db/db');
+const { restrictedQuery } = require('../../db/db');
 
 router.post("/", async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const rows = await query(
+        const rows = await restrictedQuery(
             "users",
             "SELECT password, salt FROM {{table}} WHERE email = ?",
             [email]
@@ -36,7 +36,7 @@ router.post("/", async (req, res) => {
             maxAge: 1000 * 60 * 60 * 24
         });
 
-        const role = await query("users", "SELECT role FROM {{table}} WHERE email = ?", [email]);
+        const role = await restrictedQuery("users", "SELECT role FROM {{table}} WHERE email = ?", [email]);
 
         return res.status(200).json({ success: true, role: role[0].role });
 
