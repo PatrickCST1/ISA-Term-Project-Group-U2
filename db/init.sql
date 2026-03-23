@@ -28,7 +28,7 @@ CREATE TABLE `users` (
   `password` varchar(255) NOT NULL,
   `salt` varchar(255) NOT NULL,
   `role` varchar(50) NOT NULL DEFAULT 'user',
-  `daily_token_limit` int NOT NULL DEFAULT '256',
+  `daily_token_limit` int NOT NULL DEFAULT '20',
   `daily_tokens_consumed` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

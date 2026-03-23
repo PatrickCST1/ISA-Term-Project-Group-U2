@@ -31,7 +31,7 @@ router.post("/", async (req, res) => {
         res.cookie("auth_email", email, {
             httpOnly: true,
             secure: true,
-            sameSite: "lax",
+            sameSite: "none",
             signed: true,
             maxAge: 1000 * 60 * 60 * 24
         });
