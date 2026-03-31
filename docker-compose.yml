@@ -24,6 +24,13 @@ services:
     networks:
       - lumina-network
 
+  lightbulb:
+    build: ./services/lightbulb
+    ports:
+      - "5000:5000"
+    networks:
+      - lumina-network
+
   db:
     image: mysql:8.0
     environment:

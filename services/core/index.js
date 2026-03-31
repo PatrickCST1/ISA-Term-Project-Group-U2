@@ -19,6 +19,7 @@ const deleteUserRouter = require("./routes/client/deleteUser");
 const logoutRouter = require("./routes/client/logout");
 
 const modelQueryRouter = require("./routes/api/query");
+const lightbulbRouter = require("../../lightbulb/light");
 
 const auth = require("./middleware/auth");
 
@@ -41,6 +42,7 @@ app.use(`${BASE_PATH}/client/updateUsers`, auth, updateUserRouter);
 app.use(`${BASE_PATH}/client/deleteUser`, auth, deleteUserRouter);
 
 app.use(`${BASE_PATH}/api/query`, modelQueryRouter);
+app.use(`${BASE_PATH}/api/light`, lightbulbRouter);
 
 
 app.use(BASE_PATH, express.static(path.join(__dirname, '../dist')));

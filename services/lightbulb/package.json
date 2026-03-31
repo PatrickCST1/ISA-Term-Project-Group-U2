@@ -1,0 +1,13 @@
+{
+  "name": "lightbulb-service",
+  "version": "1.0.0",
+  "description": "Microservice for controlling Govee lights",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  }
+}
