@@ -24,21 +24,19 @@ async function getDevices(apiKey) {
 	return response.json();
 }
 
-async function sendPowerCommand(apiKey, deviceInfo, color) {
+async function sendColorCommand(apiKey, deviceInfo, color) {
 	const url = 'https://openapi.api.govee.com/router/api/v1/device/control';
+	// Convert separate RGB values (0-255) into a single integer 0-16777215
+	const rgbInt = (color.r << 16) + (color.g << 8) + color.b;
 	const body = {
 		requestId: generateUUID(),
 		payload: {
 			sku: deviceInfo.sku,
 			device: deviceInfo.device,
 			capability: {
-				type: 'devices.capabilities.color_rgb',
+				type: 'devices.capabilities.color_setting',
 				instance: 'colorRgb',
-				value: {
-					r: color.r,
-					g: color.g,
-					b: color.b
-				}
+				value: rgbInt
 			}
 		}
 	};
@@ -89,7 +87,7 @@ router.post('/', async (req, res) => {
 			device: firstDevice.device
 		};
 
-		const result = await sendPowerCommand(apiKey, deviceInfo, color);
+		const result = await sendColorCommand(apiKey, deviceInfo, color);
 		return res.json(result);
 	} catch (err) {
 		console.error('Light bulb fetch error:', err.message);
