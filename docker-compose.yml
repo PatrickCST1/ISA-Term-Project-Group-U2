@@ -3,6 +3,8 @@ services:
     build: ./client
     ports:
       - "5173:5173"
+    environment:
+      - CORE_HOST=http://core:3000
     depends_on:
       - core
     networks:

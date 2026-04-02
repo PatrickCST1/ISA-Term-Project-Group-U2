@@ -19,9 +19,14 @@ const deleteUserRouter = require("./routes/client/deleteUser");
 const logoutRouter = require("./routes/client/logout");
 
 const modelQueryRouter = require("./routes/api/query");
-const lightbulbRouter = require("../../lightbulb/light");
 
-const auth = require("./middleware/auth");
+const tokenUserRouter = require("./routes/client/tokenUser");
+const tokenCreateRouter = require("./routes/client/tokenCreate");
+const tokenRotateRouter = require("./routes/client/tokenRotate");
+const tokenDeleteRouter = require("./routes/client/tokenDelete");
+
+const auth = require("./middleware/sessionAuth");
+const validateToken = require("./middleware/validateToken");
 
 app.use(cors({
     origin: process.env.CLIENT_URL,
@@ -41,9 +46,12 @@ app.use(`${BASE_PATH}/client/users`, auth, usersRouter);
 app.use(`${BASE_PATH}/client/updateUsers`, auth, updateUserRouter);
 app.use(`${BASE_PATH}/client/deleteUser`, auth, deleteUserRouter);
 
-app.use(`${BASE_PATH}/api/query`, modelQueryRouter);
-app.use(`${BASE_PATH}/api/light`, lightbulbRouter);
+app.use(`${BASE_PATH}/client/tokens/user`, auth, tokenUserRouter);
+app.use(`${BASE_PATH}/client/token/create`, auth, tokenCreateRouter);
+app.use(`${BASE_PATH}/client/token/rotate`, auth, tokenRotateRouter);
+app.use(`${BASE_PATH}/client/token/delete`, auth, tokenDeleteRouter);
 
+app.use(`${BASE_PATH}/api/query`, validateToken, modelQueryRouter);
 
 app.use(BASE_PATH, express.static(path.join(__dirname, '../dist')));
 app.get(`${BASE_PATH}/*path`, (req, res) => {

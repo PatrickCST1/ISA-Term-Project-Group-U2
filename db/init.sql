@@ -20,6 +20,8 @@
 --
 
 DROP TABLE IF EXISTS `users`;
+DROP TABLE IF EXISTS `api_tokens`;
+
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `users` (
@@ -32,6 +34,16 @@ CREATE TABLE `users` (
   `daily_tokens_consumed` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `api_tokens` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_email` VARCHAR(100) NOT NULL,
+    `token_hash` VARCHAR(255) NOT NULL,
+    `redacted_token` VARCHAR(15) NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `last_used_at` TIMESTAMP NULL DEFAULT NULL,
+    CONSTRAINT `fk_user_email` FOREIGN KEY (`user_email`) REFERENCES `users` (`email`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- Seed data
