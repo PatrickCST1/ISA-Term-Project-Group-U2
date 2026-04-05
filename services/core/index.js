@@ -53,7 +53,7 @@ app.use(`${BASE_PATH}/client/token/rotate`, auth, tokenRotateRouter);
 app.use(`${BASE_PATH}/client/token/delete`, auth, tokenDeleteRouter);
 app.use(`${BASE_PATH}/client/token`, auth, tokenGetRouter);
 
-app.use(`${BASE_PATH}/api/query`, validateToken, modelQueryRouter);
+app.use(`${BASE_PATH}/api/v1/query`, validateToken, modelQueryRouter);
 
 app.use(BASE_PATH, express.static(path.join(__dirname, '../dist')));
 app.get(`${BASE_PATH}/*path`, (req, res) => {
