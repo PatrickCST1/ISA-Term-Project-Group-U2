@@ -17,7 +17,8 @@ services:
     env_file:
       - ./services/core/.env
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - lumina-network
 
@@ -48,6 +49,11 @@ services:
       - dbdata:/var/lib/mysql
       - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql
       - ./db/init.sh:/docker-entrypoint-initdb.d/02-init.sh
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASS}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     networks:
       - lumina-network
 

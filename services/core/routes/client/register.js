@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const crypto = require("crypto");
+const jwt = require("jsonwebtoken");
 const { restrictedQuery } = require("../../db/db");
 
 router.post("/", async (req, res) => {
@@ -34,11 +35,12 @@ router.post("/", async (req, res) => {
             [username, email, hash, salt]
         );
 
-        res.cookie("auth_email", email, {
+        const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: "24h" });
+
+        res.cookie("auth_token", token, {
             httpOnly: true,
             secure: true,
             sameSite: "none",
-            signed: true,
             maxAge: 1000 * 60 * 60 * 24
         });
 

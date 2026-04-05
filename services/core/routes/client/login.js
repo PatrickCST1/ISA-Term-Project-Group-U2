@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
 const { restrictedQuery } = require('../../db/db');
+const jwt = require("jsonwebtoken");
 
 router.post("/", async (req, res) => {
     const { email, password } = req.body;
@@ -28,11 +29,12 @@ router.post("/", async (req, res) => {
             return res.status(401).json({ error: "ERR_BAD_PASSWORD" });
         }
 
-        res.cookie("auth_email", email, {
+        const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: "24h" });
+
+        res.cookie("auth_token", token, {
             httpOnly: true,
             secure: true,
             sameSite: "none",
-            signed: true,
             maxAge: 1000 * 60 * 60 * 24
         });
 

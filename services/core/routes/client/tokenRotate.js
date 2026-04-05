@@ -19,7 +19,7 @@ router.put("/:tokenId", async (req, res) => {
         const { rawToken, hash, redacted } = generateTokenPair();
         const tokenId = req.params.tokenId;
 
-        const [result] = await db.restrictedQuery(
+        const result = await db.restrictedQuery(
             "api_tokens",
             "UPDATE {{table}} SET token_hash = ?, redacted_token = ? WHERE id = ? AND user_email = ?",
             [hash, redacted, tokenId, req.user.email]
@@ -31,6 +31,7 @@ router.put("/:tokenId", async (req, res) => {
         
         res.status(200).json({ token: rawToken });
     } catch (err) {
+        console.error(err);
         res.status(500).send();
     }
 });

@@ -24,6 +24,7 @@ const tokenUserRouter = require("./routes/client/tokenUser");
 const tokenCreateRouter = require("./routes/client/tokenCreate");
 const tokenRotateRouter = require("./routes/client/tokenRotate");
 const tokenDeleteRouter = require("./routes/client/tokenDelete");
+const tokenGetRouter = require("./routes/client/tokenGet");
 
 const auth = require("./middleware/sessionAuth");
 const validateToken = require("./middleware/validateToken");
@@ -50,6 +51,7 @@ app.use(`${BASE_PATH}/client/tokens/user`, auth, tokenUserRouter);
 app.use(`${BASE_PATH}/client/token/create`, auth, tokenCreateRouter);
 app.use(`${BASE_PATH}/client/token/rotate`, auth, tokenRotateRouter);
 app.use(`${BASE_PATH}/client/token/delete`, auth, tokenDeleteRouter);
+app.use(`${BASE_PATH}/client/token`, auth, tokenGetRouter);
 
 app.use(`${BASE_PATH}/api/query`, validateToken, modelQueryRouter);
 

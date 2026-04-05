@@ -6,7 +6,7 @@ router.get("/", async (req, res) => {
     try {
         const rows = await db.restrictedQuery(
             "api_tokens",
-            "SELECT id, redacted_token, created_at FROM {{table}} WHERE user_email = ?",
+            "SELECT id, name, redacted_token, created_at FROM {{table}} WHERE user_email = ?",
             [req.user.email]
         );
         res.status(200).json(rows);

@@ -1,14 +1,17 @@
-// services/middleware/auth.js
+const jwt = require("jsonwebtoken");
 const { restrictedQuery } = require("../db/db");
 
 module.exports = async function (req, res, next) {
-    const email = req.signedCookies.auth_email;
+    const token = req.cookies.auth_token;
 
-    if (!email) {
+    if (!token) {
         return res.status(401).json({ error: "Unauthorized" });
     }
 
     try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const email = decoded.email;
+
         const rows = await restrictedQuery(
             "users",
             "SELECT email, username, role, daily_token_limit, daily_tokens_consumed FROM {{table}} WHERE email = ?",
@@ -16,7 +19,7 @@ module.exports = async function (req, res, next) {
         );
 
         if (rows.length === 0) {
-            res.clearCookie("auth_email");
+            res.clearCookie("auth_token");
             return res.status(401).json({ error: "Unauthorized" });
         }
 
@@ -30,6 +33,10 @@ module.exports = async function (req, res, next) {
 
         next();
     } catch (err) {
+        if (err.name === "JsonWebTokenError" || err.name === "TokenExpiredError") {
+            res.clearCookie("auth_token");
+            return res.status(401).json({ error: "Unauthorized" });
+        }
         console.error(err);
         return res.status(500).json({ error: "ERR_SERVER" });
     }

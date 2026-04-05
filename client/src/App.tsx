@@ -62,6 +62,11 @@ export default function App() {
     role: string;
     daily_token_limit: number;
   } | null>(null);
+  const [selectedTokenId, setSelectedTokenId] = useState<number | null>(null);
+  const [createdToken, setCreatedToken] = useState<string | null>(null);
+  const [tokenName, setTokenName] = useState('');
+  const [rotatedToken, setRotatedToken] = useState<string | null>(null);
+
 
   useEffect(() => {
     fetch(apiUrl('/client/user'), { credentials: 'include' })
@@ -106,18 +111,70 @@ export default function App() {
     setRole('user');
   }
 
+  async function handleCreateToken() {
+    try {
+      const res = await fetch(apiUrl('/client/token/create'), {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: tokenName })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCreatedToken(data.token);
+        setShowModal(false);
+        setScreen('TOKEN_CREATED_SUCCESS');
+        setTokenName('');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function handleRotateToken() {
+    try {
+      console.log('rotating token id:', selectedTokenId); // add this
+      const res = await fetch(apiUrl(`/client/token/rotate/${selectedTokenId}`), {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setRotatedToken(data.token);
+        setScreen('TOKEN_ROTATED_SUCCESS');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function handleDeleteToken() {
+    try {
+      const res = await fetch(apiUrl(`/client/token/delete/${selectedTokenId}`), {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (res.ok) {
+        setScreen('TOKEN_DELETED_SUCCESS');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   const renderScreen = () => {
     switch (screen) {
       case 'LOGIN': return <LoginScreen onLogin={navigateToDashboard} onSignUp={() => setScreen('SIGNUP')} />;
       case 'SIGNUP': return <SignUpScreen onSignUp={navigateToDashboard} onLogin={() => setScreen('LOGIN')} />;
       case 'USER_DASHBOARD': return <UserDashboard onTabChange={handleTabChange}  onLogout={handleLogout} />;
       case 'ADMIN_DASHBOARD': return <AdminDashboard onTabChange={handleTabChange} onEditUser={(user) => { setSelectedUser(user); setScreen('USER_EDIT'); }} onDeleteUser={(user) => { setSelectedUser(user); setScreen('USER_DELETE_CONFIRM'); }} onLogout={handleLogout} />;
-      case 'TOKENS_LIST': return <TokensList onTabChange={handleTabChange} onSelectToken={() => setScreen('TOKEN_DETAILS')} onCreateToken={() => setShowModal(true)} onLogout={handleLogout} />;
-      case 'TOKEN_DETAILS': return <TokenDetails onBack={() => setScreen('TOKENS_LIST')} onRotate={() => setScreen('TOKEN_ROTATE_CONFIRM')} onDelete={() => setScreen('TOKEN_DELETE_CONFIRM')}  onLogout = {handleLogout} />;
-      case 'TOKEN_ROTATE_CONFIRM': return <TokenRotateConfirm onCancel={() => setScreen('TOKEN_DETAILS')} onConfirm={() => setScreen('TOKEN_ROTATED_SUCCESS')} />;
-      case 'TOKEN_DELETE_CONFIRM': return <TokenDeleteConfirm onCancel={() => setScreen('TOKEN_DETAILS')} onConfirm={() => setScreen('TOKEN_DELETED_SUCCESS')} />;
-      case 'TOKEN_CREATED_SUCCESS': return <TokenCreatedSuccess onDone={() => setScreen('TOKENS_LIST')} />;
-      case 'TOKEN_ROTATED_SUCCESS': return <TokenRotatedSuccess onDone={() => setScreen('TOKENS_LIST')} />;
+      case 'TOKENS_LIST': return <TokensList onTabChange={handleTabChange} onSelectToken={(id) => { setSelectedTokenId(id); setScreen('TOKEN_DETAILS'); }} onCreateToken={() => setShowModal(true)} onLogout={handleLogout} />;
+      case 'TOKEN_DETAILS': return <TokenDetails tokenId={selectedTokenId!} onBack={() => setScreen('TOKENS_LIST')} onRotate={() => setScreen('TOKEN_ROTATE_CONFIRM')} onDelete={() => setScreen('TOKEN_DELETE_CONFIRM')} onLogout={handleLogout} />;
+      case 'TOKEN_ROTATE_CONFIRM': return <TokenRotateConfirm onCancel={() => setScreen('TOKEN_DETAILS')} onConfirm={handleRotateToken} />;
+      case 'TOKEN_DELETE_CONFIRM': return <TokenDeleteConfirm onCancel={() => setScreen('TOKEN_DETAILS')} onConfirm={handleDeleteToken} />;
+      case 'TOKEN_CREATED_SUCCESS': return <TokenCreatedSuccess token={createdToken!} onDone={() => setScreen('TOKENS_LIST')} />;
+      case 'TOKEN_ROTATED_SUCCESS': return <TokenRotatedSuccess token={rotatedToken!} onDone={() => setScreen('TOKENS_LIST')} />;
       case 'TOKEN_DELETED_SUCCESS': return <TokenDeletedSuccess onDone={() => setScreen('TOKENS_LIST')} />;
       case 'USER_EDIT': return <UserEditScreen user={selectedUser} onCancel={() => setScreen('ADMIN_DASHBOARD')} onConfirm={() => setScreen('USER_EDIT_SUCCESS')} />;
       case 'USER_DELETE_CONFIRM': return <UserDeleteConfirmScreen user={selectedUser} onCancel={() => setScreen('ADMIN_DASHBOARD')} onConfirm={() => setScreen('USER_DELETED_SUCCESS')} />;
@@ -166,7 +223,7 @@ export default function App() {
                 </div>
               </div>
               <div className="px-8 py-6 space-y-6">
-                <Input label="Token Name" placeholder="e.g. Production Read-Only" />
+                <Input label="Token Name" placeholder="e.g. Production Read-Only" value={tokenName} onChange={(e) => setTokenName(e.target.value)} />
                 <div className="bg-surface-container-low rounded-xl p-4 flex gap-4 items-start">
                   <div className="p-2 bg-primary/10 rounded-lg text-primary">
                     <ShieldCheck className="w-5 h-5" />
@@ -179,7 +236,7 @@ export default function App() {
               </div>
               <div className="px-8 py-6 bg-surface-container-low/50 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                 <Button variant="tertiary" onClick={() => setShowModal(false)}>Cancel</Button>
-                <Button onClick={() => { setShowModal(false); setScreen('TOKEN_CREATED_SUCCESS'); }}>Generate Token</Button>
+                <Button onClick={handleCreateToken}>Generate Token</Button>
               </div>
             </motion.div>
           </div>
@@ -248,13 +305,14 @@ function LoginScreen({ onLogin, onSignUp }: { onLogin: (role: string) => void; o
                   <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
                   <div className="w-3 h-3 rounded-full bg-green-500"></div>
                 </div>
-                <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Authentication v2.4</span>
+                <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Query API v1.0</span>
               </div>
               <code className="font-mono text-sm text-blue-200">
-                <span className="text-blue-400">POST</span> /auth/session <br />
+                <span className="text-blue-400">POST</span> /IsaAsgn1/api/query <br />
+                <span className="text-white/40">x-api-key: </span><span className="text-green-300">your_token_here</span><br />
+                <br />
                 {'{'} <br />
-                &nbsp;&nbsp;<span className="text-blue-300">"grant_type"</span>: <span className="text-green-300">"password"</span>, <br />
-                &nbsp;&nbsp;<span className="text-blue-300">"scope"</span>: <span className="text-green-300">"orchestrate:all"</span> <br />
+                &nbsp;&nbsp;<span className="text-blue-300">"text"</span>: <span className="text-green-300">"warm sunset"</span> <br />
                 {'}'}
               </code>
             </div>
@@ -643,149 +701,215 @@ function AdminDashboard({ onTabChange, onEditUser, onDeleteUser, onLogout }: {
   );
 }
 
-function TokensList({ onTabChange, onSelectToken, onCreateToken, onLogout }: { onTabChange: (tab: string) => void; onSelectToken: () => void; onCreateToken: () => void; onLogout: ()=> void; }) {
-  const tokens = [
-    { name: 'Production Main', key: 'lum_live_••••••••••••4f2a' },
-    { name: 'Staging Environment', key: 'lum_test_••••••••••••92b1' },
-    { name: 'Analytics Webhook', key: 'lum_live_••••••••••••0c4x' },
-    { name: 'Old Mobile App', key: 'lum_live_••••••••••••33r9' },
-  ];
+function TokensList({ onTabChange, onSelectToken, onCreateToken, onLogout }: {
+  onTabChange: (tab: string) => void;
+  onSelectToken: (id: number) => void;
+  onCreateToken: () => void;
+  onLogout: () => void;
+}) {
+  const [tokens, setTokens] = useState<{
+    id: number;
+    name: string;
+    redacted_token: string;
+    created_at: string;
+  }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(apiUrl('/client/tokens/user'), { credentials: 'include' })
+        .then(res => {
+          if (!res.ok) throw new Error();
+          return res.json();
+        })
+        .then(data => setTokens(data))
+        .catch(() => setTokens([]))
+        .finally(() => setLoading(false));
+  }, []);
 
   return (
-    <div className="pb-32">
-      <Navbar activeTab="tokens" onTabChange={onTabChange} onLogout={onLogout} />
-      <main className="pt-24 px-6 max-w-3xl mx-auto">
-        <section className="flex flex-col items-start gap-8 mb-12">
-          <h1 className="font-headline font-extrabold text-4xl text-on-surface tracking-tight">API Tokens</h1>
-          <Button size="lg" className="w-full sm:w-auto" onClick={onCreateToken}>
-            <Plus className="w-5 h-5 mr-2" /> Create New Token
-          </Button>
-        </section>
+      <div className="pb-32">
+        <Navbar activeTab="tokens" onTabChange={onTabChange} onLogout={onLogout} />
+        <main className="pt-24 px-6 max-w-3xl mx-auto">
+          <section className="flex flex-col items-start gap-8 mb-12">
+            <h1 className="font-headline font-extrabold text-4xl text-on-surface tracking-tight">API Tokens</h1>
+            <Button size="lg" className="w-full sm:w-auto" onClick={onCreateToken}>
+              <Plus className="w-5 h-5 mr-2" /> Create New Token
+            </Button>
+          </section>
 
-        <div className="space-y-4">
-          {tokens.map((token) => (
-            <Card key={token.name} className="p-5 flex flex-col gap-3 cursor-pointer group hover:shadow-lg" onClick={onSelectToken}>
-              <div className="flex justify-between items-center">
-                <span className="font-bold text-lg group-hover:text-primary transition-colors">{token.name}</span>
-                <button className="text-on-surface-variant hover:text-primary transition-colors">
-                  <MoreVertical className="w-5 h-5" />
-                </button>
+          {loading ? (
+              <p className="text-on-surface-variant text-sm">Loading tokens...</p>
+          ) : tokens.length === 0 ? (
+              <Card variant="lowest" className="p-10 text-center border-2 border-dashed border-outline-variant/40">
+                <Lock className="w-10 h-10 text-on-surface-variant mx-auto mb-4 opacity-30" />
+                <p className="font-bold text-on-surface mb-1">No tokens yet</p>
+                <p className="text-on-surface-variant text-sm">Create your first token to start making API requests.</p>
+              </Card>
+          ) : (
+              <div className="space-y-4">
+                {tokens.map((token) => (
+                    <Card key={token.id} className="p-5 flex flex-col gap-3 cursor-pointer group hover:shadow-lg" onClick={() => onSelectToken(token.id)}>
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-sm text-on-surface uppercase tracking-widest">{token.name}</span>
+                        <span className="text-xs text-on-surface-variant">
+                    Created {new Date(token.created_at).toLocaleDateString()}
+                  </span>
+                      </div>
+                      <code className="font-mono text-primary bg-surface-container-low px-4 py-3 rounded-xl text-sm tracking-wider">
+                        {token.redacted_token}
+                      </code>
+                    </Card>
+                ))}
               </div>
-              <code className="font-mono text-primary bg-surface-container-low px-4 py-3 rounded-xl text-sm tracking-wider">
-                {token.key}
-              </code>
-            </Card>
-          ))}
-        </div>
-      </main>
-    </div>
+          )}
+        </main>
+      </div>
   );
 }
 
-function TokenDetails({ onBack, onRotate, onDelete, onLogout }: { onBack: () => void; onRotate: () => void; onDelete: () => void; onLogout: () => void; }) {
+function TokenDetails({ tokenId, onBack, onRotate, onDelete, onLogout }: {
+  tokenId: number;
+  onBack: () => void;
+  onRotate: () => void;
+  onDelete: () => void;
+  onLogout: () => void;
+}) {
+  const [token, setToken] = useState<{
+    id: number;
+    name: string;
+    redacted_token: string;
+    created_at: string;
+    last_used_at: string | null;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetch(apiUrl(`/client/token/${tokenId}`), { credentials: 'include' })
+        .then(res => {
+          if (!res.ok) throw new Error();
+          return res.json();
+        })
+        .then(data => setToken(data))
+        .catch(() => setError('Could not load token details.'))
+        .finally(() => setLoading(false));
+  }, [tokenId]);
+
   return (
-    <div className="pb-32">
-      <Navbar activeTab="tokens" onTabChange={() => onBack()}  onLogout = {onLogout}/>
-      <main className="pt-24 px-6 max-w-4xl mx-auto">
-        <div className="mb-10">
-          <button onClick={onBack} className="inline-flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors group">
-            <ArrowLeft className="w-5 h-5" />
-            <span className="font-bold text-sm uppercase tracking-widest">Back to Tokens</span>
-          </button>
-        </div>
-
-        <div className="mb-12">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-widest">Production</span>
-                <span className="text-on-surface-variant text-sm font-medium">Created Oct 12, 2023</span>
-              </div>
-              <h2 className="font-headline text-4xl font-extrabold text-on-surface tracking-tight">E-commerce Live Token</h2>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button variant="secondary" onClick={onRotate}>Rotate Token</Button>
-              <Button variant="danger" onClick={onDelete}>Delete Token</Button>
-            </div>
-          </div>
-        </div>
-
-        <Card className="p-8 relative overflow-hidden mb-12">
-          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-            <Lock className="w-48 h-48" />
-          </div>
-          <h3 className="text-on-surface-variant text-[10px] font-bold uppercase tracking-widest mb-4">Secret Key</h3>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-surface-container-low p-4 rounded-xl group border border-transparent hover:border-primary/10 transition-all gap-4">
-            <code className="font-mono text-base md:text-lg text-on-surface tracking-wider break-all">lum_live_••••••••••••4f2a</code>
-            <button className="shrink-0 flex items-center justify-center gap-2 text-primary font-bold text-sm hover:bg-primary/10 px-4 py-2 rounded-xl transition-colors">
-              <Copy className="w-4 h-4" /> Copy
+      <div className="pb-32">
+        <Navbar activeTab="tokens" onTabChange={onBack} onLogout={onLogout} />
+        <main className="pt-24 px-6 max-w-4xl mx-auto">
+          <div className="mb-10">
+            <button onClick={onBack} className="inline-flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors">
+              <ArrowLeft className="w-5 h-5" />
+              <span className="font-bold text-sm uppercase tracking-widest">Back to Tokens</span>
             </button>
           </div>
-          <p className="mt-6 text-on-surface-variant text-sm leading-relaxed max-w-2xl">
-            For security, this token is redacted. It provides full access to your production environment. Never share this key in client-side code.
-          </p>
-        </Card>
-      </main>
-    </div>
-  );
-}
 
-function TokenCreatedSuccess({ onDone }: { onDone: () => void }) {
-  return (
-    <main className="min-h-screen flex items-center justify-center p-6 md:p-12">
-      <div className="max-w-xl w-full text-center">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-8">
-          <CheckCircle2 className="text-primary w-10 h-10" />
-        </div>
-        <h1 className="font-headline font-extrabold text-4xl tracking-tighter text-on-surface mb-3">Token Created Successfully</h1>
-        <p className="text-on-surface-variant font-medium text-lg max-w-sm mx-auto mb-12">Your production environment access has been provisioned and is ready for use.</p>
-        
-        <Card className="p-8 mb-8 text-left">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant opacity-60">Production Key</span>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-              <span className="text-[10px] font-bold text-primary uppercase tracking-tighter">Active Now</span>
-            </div>
-          </div>
-          <div className="bg-surface-container-low rounded-xl p-6 mb-6 flex flex-col md:flex-row items-center gap-4 group">
-            <code className="text-primary font-mono text-lg font-semibold break-all">
-              pk_live_51MszB2LzF3r9Xk1QpYv7T8gH9iO0pL1mN2oP3qR4sT5uV6wX7yZ8a9b0c
-            </code>
-            <Button variant="secondary" size="sm" className="shrink-0">
-              <Copy className="w-4 h-4 mr-2" /> Copy
-            </Button>
-          </div>
-          <div className="flex gap-4 p-5 rounded-xl bg-surface-container-highest border-l-4 border-primary">
-            <ShieldCheck className="text-primary w-6 h-6 shrink-0" />
-            <div className="space-y-1">
-              <p className="font-bold text-sm text-on-surface tracking-tight">Save this key securely.</p>
-              <p className="text-sm text-on-surface-variant leading-relaxed">For your security, we will only show this token once. If you lose it, you will need to rotate the key to regain access.</p>
-            </div>
-          </div>
-        </Card>
+          {loading ? (
+              <p className="text-on-surface-variant text-sm">Loading...</p>
+          ) : error ? (
+              <p className="text-red-500 text-sm">{error}</p>
+          ) : token && (
+              <>
+                <div className="mb-12">
+                  <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                    <span className="text-on-surface-variant text-sm font-medium">
+                      Created {new Date(token.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    </span>
+                      </div>
+                      <h2 className="font-headline text-4xl font-extrabold text-on-surface tracking-tight">{token.name}</h2>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Button variant="secondary" onClick={onRotate}>Rotate Token</Button>
+                      <Button variant="danger" onClick={onDelete}>Delete Token</Button>
+                    </div>
+                  </div>
+                </div>
 
-        <div className="flex flex-col gap-4 items-center">
-          <Button size="lg" className="w-full md:w-auto" onClick={onDone}>Done</Button>
-          <button className="text-on-surface-variant font-bold text-xs uppercase tracking-widest hover:text-primary transition-colors py-2">
-            Download as .env file
-          </button>
-        </div>
+                <Card className="p-8 relative overflow-hidden mb-6">
+                  <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                    <Lock className="w-48 h-48" />
+                  </div>
+                  <h3 className="text-on-surface-variant text-[10px] font-bold uppercase tracking-widest mb-4">Redacted Key</h3>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-surface-container-low p-4 rounded-xl gap-4">
+                    <code className="font-mono text-base md:text-lg text-on-surface tracking-wider break-all">
+                      {token.redacted_token}
+                    </code>
+                  </div>
+                  <p className="mt-6 text-on-surface-variant text-sm leading-relaxed max-w-2xl">
+                    For security, the full token is only shown once at creation. Rotate this token to generate a new key.
+                  </p>
+                </Card>
 
-        <div className="mt-16 pt-8 border-t border-outline-variant/20 flex flex-col md:flex-row justify-between items-center gap-6 opacity-60">
-          <div className="flex items-center gap-3">
-            <ShieldCheck className="w-4 h-4" />
-            <span className="text-[10px] font-bold uppercase tracking-widest">AES-256 Encryption Standard</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <History className="w-4 h-4" />
-            <span className="text-[10px] font-bold uppercase tracking-widest">Logged at 14:02:11 UTC</span>
-          </div>
-        </div>
+                <Card variant="lowest" className="p-6 flex items-center gap-4">
+                  <History className="w-5 h-5 text-on-surface-variant shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-0.5">Last Used</p>
+                    <p className="text-sm font-medium text-on-surface">
+                      {token.last_used_at
+                          ? new Date(token.last_used_at).toLocaleString()
+                          : 'Never used'}
+                    </p>
+                  </div>
+                </Card>
+              </>
+          )}
+        </main>
       </div>
-    </main>
   );
 }
+
+
+function TokenCreatedSuccess({ token, onDone }: { token: string; onDone: () => void }) {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy() {
+    navigator.clipboard.writeText(token);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+      <main className="min-h-screen flex items-center justify-center p-6 md:p-12">
+        <div className="max-w-xl w-full text-center">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-8">
+            <CheckCircle2 className="text-primary w-10 h-10" />
+          </div>
+          <h1 className="font-headline font-extrabold text-4xl tracking-tighter text-on-surface mb-3">Token Created Successfully</h1>
+          <p className="text-on-surface-variant font-medium text-lg max-w-sm mx-auto mb-12">Your access token has been provisioned and is ready for use.</p>
+
+          <Card className="p-8 mb-8 text-left">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant opacity-60">Secret Key</span>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                <span className="text-[10px] font-bold text-primary uppercase tracking-tighter">Active Now</span>
+              </div>
+            </div>
+            <div className="bg-surface-container-low rounded-xl p-6 mb-6 flex flex-col md:flex-row items-center gap-4">
+              <code className="text-primary font-mono text-sm font-semibold break-all">{token}</code>
+              <Button variant="secondary" size="sm" className="shrink-0" onClick={handleCopy}>
+                <Copy className="w-4 h-4 mr-2" /> {copied ? 'Copied!' : 'Copy'}
+              </Button>
+            </div>
+            <div className="flex gap-4 p-5 rounded-xl bg-surface-container-highest border-l-4 border-primary">
+              <ShieldCheck className="text-primary w-6 h-6 shrink-0" />
+              <div className="space-y-1">
+                <p className="font-bold text-sm text-on-surface tracking-tight">Save this key securely.</p>
+                <p className="text-sm text-on-surface-variant leading-relaxed">For your security, we will only show this token once. If you lose it, you will need to rotate the key to regain access.</p>
+              </div>
+            </div>
+          </Card>
+
+          <Button size="lg" className="w-full md:w-auto" onClick={onDone}>Done</Button>
+        </div>
+      </main>
+  );
+}
+
 
 function TokenRotateConfirm({ onCancel, onConfirm }: { onCancel: () => void; onConfirm: () => void }) {
   return (
@@ -829,48 +953,53 @@ function TokenDeleteConfirm({ onCancel, onConfirm }: { onCancel: () => void; onC
   );
 }
 
-function TokenRotatedSuccess({ onDone }: { onDone: () => void }) {
-  return (
-    <main className="min-h-screen flex items-center justify-center p-6 md:p-12">
-      <div className="max-w-xl w-full text-center">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-8">
-          <CheckCircle2 className="text-primary w-10 h-10" />
-        </div>
-        <h1 className="font-headline font-extrabold text-4xl tracking-tighter text-on-surface mb-3">Token Rotated Successfully</h1>
-        <p className="text-on-surface-variant font-medium text-lg max-w-sm mx-auto mb-12">Your new production credentials have been generated and are ready for integration.</p>
-        
-        <Card className="p-8 mb-8 text-left">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant opacity-60">New Secret Key</span>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-              <span className="text-[10px] font-bold text-primary uppercase tracking-tighter">Active Now</span>
-            </div>
-          </div>
-          <div className="bg-surface-container-low rounded-xl p-6 mb-6 flex flex-col md:flex-row items-center gap-4 group">
-            <code className="text-primary font-mono text-lg font-semibold break-all">
-              lum_live_92k1QpYv7T8gH9iO0pL1mN2oP3qR4sT5uV6wX7yZ8a9b0c_ROTATED
-            </code>
-            <Button variant="secondary" size="sm" className="shrink-0">
-              <Copy className="w-4 h-4 mr-2" /> Copy
-            </Button>
-          </div>
-          <div className="flex gap-4 p-5 rounded-xl bg-surface-container-highest border-l-4 border-primary">
-            <ShieldCheck className="text-primary w-6 h-6 shrink-0" />
-            <div className="space-y-1">
-              <p className="font-bold text-sm text-on-surface tracking-tight">Copy and save this key now.</p>
-              <p className="text-sm text-on-surface-variant leading-relaxed">For your security, we will only show this token once. You will not be able to view it again. If you lose it, you must rotate the key again.</p>
-            </div>
-          </div>
-        </Card>
+function TokenRotatedSuccess({ token, onDone }: { token: string; onDone: () => void }) {
+  const [copied, setCopied] = useState(false);
 
-        <div className="flex flex-col gap-4 items-center">
+  function handleCopy() {
+    navigator.clipboard.writeText(token);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+      <main className="min-h-screen flex items-center justify-center p-6 md:p-12">
+        <div className="max-w-xl w-full text-center">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-8">
+            <CheckCircle2 className="text-primary w-10 h-10" />
+          </div>
+          <h1 className="font-headline font-extrabold text-4xl tracking-tighter text-on-surface mb-3">Token Rotated Successfully</h1>
+          <p className="text-on-surface-variant font-medium text-lg max-w-sm mx-auto mb-12">Your new credentials have been generated and are ready for integration.</p>
+
+          <Card className="p-8 mb-8 text-left">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant opacity-60">New Secret Key</span>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                <span className="text-[10px] font-bold text-primary uppercase tracking-tighter">Active Now</span>
+              </div>
+            </div>
+            <div className="bg-surface-container-low rounded-xl p-6 mb-6 flex flex-col md:flex-row items-center gap-4">
+              <code className="text-primary font-mono text-sm font-semibold break-all">{token}</code>
+              <Button variant="secondary" size="sm" className="shrink-0" onClick={handleCopy}>
+                <Copy className="w-4 h-4 mr-2" /> {copied ? 'Copied!' : 'Copy'}
+              </Button>
+            </div>
+            <div className="flex gap-4 p-5 rounded-xl bg-surface-container-highest border-l-4 border-primary">
+              <ShieldCheck className="text-primary w-6 h-6 shrink-0" />
+              <div className="space-y-1">
+                <p className="font-bold text-sm text-on-surface tracking-tight">Copy and save this key now.</p>
+                <p className="text-sm text-on-surface-variant leading-relaxed">For your security, we will only show this token once. You will not be able to view it again.</p>
+              </div>
+            </div>
+          </Card>
+
           <Button size="lg" className="w-full md:w-auto" onClick={onDone}>Done</Button>
         </div>
-      </div>
-    </main>
+      </main>
   );
 }
+
 
 function TokenDeletedSuccess({ onDone }: { onDone: () => void }) {
   return (

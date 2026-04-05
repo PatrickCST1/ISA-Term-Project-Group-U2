@@ -12,14 +12,17 @@ const generateTokenPair = () => {
 
 router.post("/", async (req, res) => {
     try {
+        const { name } = req.body;
+        if (!name) return res.status(400).json({ error: "Token name is required" });
+
         const { rawToken, hash, redacted } = generateTokenPair();
-        
+
         await db.restrictedQuery(
             "api_tokens",
-            "INSERT INTO {{table}} (user_email, token_hash, redacted_token) VALUES (?, ?, ?)",
-            [req.user.email, hash, redacted]
+            "INSERT INTO {{table}} (user_email, name, token_hash, redacted_token) VALUES (?, ?, ?, ?)",
+            [req.user.email, name, hash, redacted]
         );
-        
+
         res.status(200).json({ token: rawToken });
     } catch (err) {
         console.error(err);

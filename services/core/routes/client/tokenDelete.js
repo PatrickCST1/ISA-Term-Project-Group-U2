@@ -4,7 +4,7 @@ const db = require("../../db/db");
 
 router.delete("/:tokenId", async (req, res) => {
     try {
-        const [result] = await db.restrictedQuery(
+        const result = await db.restrictedQuery(
             "api_tokens",
             "DELETE FROM {{table}} WHERE id = ? AND user_email = ?",
             [req.params.tokenId, req.user.email]
