@@ -33,23 +33,23 @@ import { Navbar } from './components/Navbar';
 import { cn } from './lib/utils';
 import { apiUrl } from './lib/api';
 
-
-type Screen = 
-  | 'LOGIN' 
-  | 'SIGNUP' 
-  | 'USER_DASHBOARD' 
-  | 'ADMIN_DASHBOARD' 
-  | 'TOKENS_LIST' 
-  | 'TOKEN_DETAILS' 
-  | 'TOKEN_ROTATE_CONFIRM'
-  | 'TOKEN_DELETE_CONFIRM'
-  | 'TOKEN_CREATED_SUCCESS'
-  | 'TOKEN_ROTATED_SUCCESS'
-  | 'TOKEN_DELETED_SUCCESS'
-  | 'USER_EDIT'
-  | 'USER_DELETE_CONFIRM'
-  | 'USER_EDIT_SUCCESS'
-  | 'USER_DELETED_SUCCESS';
+type Screen =
+    | 'LOGIN'
+    | 'SIGNUP'
+    | 'USER_DASHBOARD'
+    | 'ADMIN_DASHBOARD'
+    | 'TOKENS_LIST'
+    | 'TOKEN_DETAILS'
+    | 'TOKEN_ROTATE_CONFIRM'
+    | 'TOKEN_DELETE_CONFIRM'
+    | 'TOKEN_CREATED_SUCCESS'
+    | 'TOKEN_ROTATED_SUCCESS'
+    | 'TOKEN_DELETED_SUCCESS'
+    | 'USER_EDIT'
+    | 'USER_DELETE_CONFIRM'
+    | 'USER_EDIT_SUCCESS'
+    | 'USER_DELETED_SUCCESS'
+    | 'TRY_IT';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('LOGIN');
@@ -97,6 +97,7 @@ export default function App() {
 
   const handleTabChange = (tab: string) => {
     if (tab === 'tokens') return setScreen('TOKENS_LIST');
+    if (tab === 'tryit') return setScreen('TRY_IT'); // ← ADD THIS
     if (tab === 'dashboard' || tab === 'admin') {
       return setScreen(role === 'admin' ? 'ADMIN_DASHBOARD' : 'USER_DASHBOARD');
     }
@@ -180,6 +181,7 @@ export default function App() {
       case 'USER_DELETE_CONFIRM': return <UserDeleteConfirmScreen user={selectedUser} onCancel={() => setScreen('ADMIN_DASHBOARD')} onConfirm={() => setScreen('USER_DELETED_SUCCESS')} />;
       case 'USER_EDIT_SUCCESS': return <UserEditSuccess onDone={() => setScreen('ADMIN_DASHBOARD')} />;
       case 'USER_DELETED_SUCCESS': return <UserDeletedSuccess onDone={() => setScreen('ADMIN_DASHBOARD')} />;
+      case 'TRY_IT': return <TryItScreen onTabChange={handleTabChange} onLogout={handleLogout} />;
       default: return <LoginScreen onLogin={navigateToDashboard} onSignUp={() => setScreen('SIGNUP')} />;
     }
   };
@@ -1239,6 +1241,184 @@ function UserDeletedSuccess({ onDone }: { onDone: () => void }) {
           </Card>
         </div>
       </main>
+  );
+}
+
+function TryItScreen({ onTabChange, onLogout }: { onTabChange: (tab: string) => void; onLogout: () => void }) {
+  const [apiKey, setApiKey] = useState('');
+  const [prompt, setPrompt] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [response, setResponse] = useState<{ status: number; data: unknown } | null>(null);
+  const [error, setError] = useState('');
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setResponse(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch(apiUrl('/api/v1/query'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+        },
+        body: JSON.stringify({ text: prompt }),
+      });
+
+      const data = await res.json();
+      setResponse({ status: res.status, data });
+    } catch (err) {
+      setError('Could not reach the API. Check your connection.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const isSuccess = response && response.status >= 200 && response.status < 300;
+
+  return (
+      <div className="pb-32">
+        <Navbar activeTab="tryit" onTabChange={onTabChange} onLogout={onLogout} />
+        <main className="pt-24 px-6 max-w-4xl mx-auto">
+          <section className="mb-10">
+            <h1 className="font-headline font-extrabold text-4xl text-on-surface tracking-tight mb-2">Try It</h1>
+            <p className="text-on-surface-variant text-base">Send a live request to the Lumina API using your own token and see the raw response.</p>
+          </section>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Request Panel */}
+            <div className="space-y-5">
+              <Card className="p-8">
+                <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant mb-6">Request</h2>
+                <form className="space-y-5" onSubmit={handleSubmit}>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.15em]">API Key</label>
+                    <div className="relative">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/40">
+                        <Lock className="w-4 h-4" />
+                      </div>
+                      <input
+                          type="password"
+                          value={apiKey}
+                          onChange={e => setApiKey(e.target.value)}
+                          placeholder="lum_••••••••••••••••"
+                          className="w-full pl-10 pr-4 py-3 bg-surface-container-low rounded-xl text-sm font-mono text-on-surface placeholder:text-on-surface-variant/40 border border-outline-variant/20 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.15em]">Text Prompt</label>
+                    <textarea
+                        value={prompt}
+                        onChange={e => setPrompt(e.target.value)}
+                        placeholder="e.g. warm sunset glow, deep ocean blue, cozy fireplace..."
+                        rows={4}
+                        className="w-full px-4 py-3 bg-surface-container-low rounded-xl text-sm text-on-surface placeholder:text-on-surface-variant/40 border border-outline-variant/20 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all resize-none font-sans leading-relaxed"
+                    />
+                  </div>
+
+                  {error && (
+                      <div className="flex items-start gap-3 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+                        <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                        <p className="text-sm text-red-600">{error}</p>
+                      </div>
+                  )}
+
+                  <Button className="w-full" type="submit" disabled={loading || !apiKey || !prompt}>
+                    {loading ? (
+                        <>
+                          <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                          Sending Request...
+                        </>
+                    ) : (
+                        <>
+                          <Zap className="w-4 h-4 mr-2 fill-current" /> Send Request
+                        </>
+                    )}
+                  </Button>
+                </form>
+              </Card>
+
+              {/* Endpoint reference card */}
+              <Card variant="lowest" className="p-5 border border-outline-variant/20">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-[10px] font-bold bg-primary text-white px-2 py-0.5 rounded-md uppercase tracking-wider">POST</span>
+                  <code className="text-xs font-mono text-on-surface-variant">/api/v1/query</code>
+                </div>
+                <div className="bg-on-surface rounded-lg p-4">
+                  <code className="font-mono text-xs text-blue-200 leading-relaxed">
+                    <span className="text-white/40">x-api-key: </span><span className="text-green-300">your_token</span><br />
+                    <br />
+                    {'{'}<br />
+                    &nbsp;&nbsp;<span className="text-blue-300">"text"</span>: <span className="text-green-300">"{prompt || 'warm sunset'}"</span><br />
+                    {'}'}
+                  </code>
+                </div>
+              </Card>
+            </div>
+
+            {/* Response Panel */}
+            <Card className={`p-8 flex flex-col transition-all duration-300 ${response ? '' : 'opacity-60'}`}>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant">Response</h2>
+                {response && (
+                    <span className={`text-xs font-bold px-3 py-1 rounded-full ${isSuccess ? 'bg-primary/10 text-primary' : 'bg-red-50 text-red-600'}`}>
+                  {response.status} {isSuccess ? 'OK' : 'ERROR'}
+                </span>
+                )}
+              </div>
+
+              {!response && !loading && (
+                  <div className="flex-1 flex flex-col items-center justify-center text-center py-12">
+                    <div className="w-16 h-16 rounded-2xl bg-surface-container flex items-center justify-center mb-4">
+                      <Eye className="w-7 h-7 text-on-surface-variant/30" />
+                    </div>
+                    <p className="text-sm font-medium text-on-surface-variant/60">Response will appear here</p>
+                    <p className="text-xs text-on-surface-variant/40 mt-1">Enter your API key and prompt to get started</p>
+                  </div>
+              )}
+
+              {loading && (
+                  <div className="flex-1 flex flex-col items-center justify-center py-12">
+                    <div className="w-10 h-10 border-2 border-primary/20 border-t-primary rounded-full animate-spin mb-4" />
+                    <p className="text-sm text-on-surface-variant">Awaiting response...</p>
+                  </div>
+              )}
+
+              {response && !loading && (
+                  <div className="flex-1 flex flex-col gap-4">
+                    {/* Color swatch if colour array returned */}
+                    {isSuccess && (response.data as any)?.colour && (
+                        <div className="flex items-center gap-4 p-4 bg-surface-container-low rounded-xl">
+                          <div
+                              className="w-12 h-12 rounded-xl shadow-inner flex-shrink-0 border border-outline-variant/10"
+                              style={{
+                                backgroundColor: `rgb(${(response.data as any).colour[0]}, ${(response.data as any).colour[1]}, ${(response.data as any).colour[2]})`
+                              }}
+                          />
+                          <div>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-0.5">Resolved Color</p>
+                            <code className="text-sm font-mono text-on-surface font-semibold">
+                              rgb({(response.data as any).colour.join(', ')})
+                            </code>
+                          </div>
+                        </div>
+                    )}
+
+                    <div className="flex-1 bg-on-surface rounded-xl p-5 overflow-auto">
+                  <pre className="text-xs font-mono text-green-300 leading-relaxed whitespace-pre-wrap break-all">
+                    {JSON.stringify(response.data, null, 2)}
+                  </pre>
+                    </div>
+                  </div>
+              )}
+            </Card>
+          </div>
+        </main>
+      </div>
   );
 }
 

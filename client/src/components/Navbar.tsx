@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, Key, FileText, Lightbulb, User, LogOut } from 'lucide-react';
+import { LayoutDashboard, Key, Zap, Lightbulb, User, LogOut } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { cn } from '../lib/utils';
 
@@ -16,7 +16,7 @@ export const Navbar = ({ activeTab, onTabChange, onLogout, isAdmin = false }: Na
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'tokens', label: 'Tokens', icon: Key },
-    { id: 'docs', label: 'Docs', icon: FileText },
+    { id: 'tryit', label: 'Try It', icon: Zap },
   ];
 
   return (

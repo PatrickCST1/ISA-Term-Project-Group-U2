@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const { restrictedQuery } = require('../../db/db'); // ← add this, adjust path if needed
+
 
 router.post('/', async (req, res) => {
     const { text } = req.body;
@@ -48,7 +50,14 @@ router.post('/', async (req, res) => {
                 console.error("Failed to update lightbulb color:", err.message);
             }
         }
-        
+
+        restrictedQuery(
+            "users",
+            "UPDATE {{table}} SET daily_tokens_consumed = daily_tokens_consumed + 1 WHERE email = ?",
+            [req.user.email]
+        );
+
+
         return res.json(data);
     } catch (err) {
         console.error('Model fetch error:', err.message);
